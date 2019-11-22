@@ -1,0 +1,10 @@
+<?xml version="1.0" standalone="no" ?>
+<!-- Configuration Parmeters -->
+<logfilename>/home/jdellaria/Desktop/logPrepareMusic.txt</logfilename>
+<logvalue>logInformation</logvalue>
+<logprintscreen>true</logprintscreen>
+<logprintfile>true</logprintfile>
+<logprinttime>true</logprinttime>
+<MP3OriginalDirectory>/Shared/New Albums/Original/</MP3OriginalDirectory>
+<MP3StagingDirectory>/Shared/New Albums/Staging/</MP3StagingDirectory>
+<MP3MusicLibraryDirectory>/RAID/Music/Album Music/</MP3MusicLibraryDirectory>
