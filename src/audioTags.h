@@ -32,6 +32,7 @@ public:
 	int length;
 	int disk;
 	int diskcount;
+	string comments;
 
 	audioTags();
 	virtual ~audioTags();

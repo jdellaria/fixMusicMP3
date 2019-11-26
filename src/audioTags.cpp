@@ -85,6 +85,7 @@ int audioTags::get(const char *fileName)
 
 	sourceFile = fileName;
 	location.utf8 = fileName;
+	location.ascii = fileName;
 
 	if(f.isNull())
 	{

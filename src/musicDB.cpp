@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <string>
+#include <DLog.h>
 
 #define         MASKBITS                0x3F
 #define         MASKBYTE                0x80
@@ -170,6 +171,15 @@ void musicDB::setLocation(char* where)
 	int i = 0;
 	std::vector< unsigned char > g;
 
+	for(i = 0;i < length;i++)
+	{
+
+		location[i] = where[i];
+
+	}
+	location[i] = 0;
+
+#ifdef JON
 //This next section checks to see if we are give a UTF8 character (today we only handle C3). If it is, we then remove the C3 character and adjust the following character to the Windows 1252 character set.
 	for (i=0; where[i]; i++) g.push_back(where[i]);
 	for(i = 0;i < length;i++)
@@ -187,7 +197,7 @@ void musicDB::setLocation(char* where)
 		j++;
 	}
 	location[j] = 0;
-
+#endif
 }
 
 void musicDB::setThumbLocation(char* where)
@@ -321,6 +331,30 @@ long musicDB::updateAlbumCover()	//album must be set before calling function
 	return(albumId);
 }
 
+long musicDB::updateSongComments()	//Song Comments must be set before calling function
+{
+	char SQLStmt[1000];
+	char templocation[256];
+	int length;
+
+	length = strlen(comments.c_str());
+	if (length >= 100)
+	{
+		length = 99;
+	}
+	mysql_real_escape_string(&dbaseConnection, templocation, comments.c_str(), length);
+
+	sprintf(SQLStmt, "Update Music.songlibrary set Comments = TRIM('%s') where SongIndex = %d;" ,templocation ,songID);
+	if (mysql_query(&dbaseConnection, SQLStmt))
+	{
+		fprintf(stderr, " updateAlbumCover updating Cover\n");
+		fprintf(stderr, " %s: %s\n", location, mysql_error(&dbaseConnection));
+		return(0);
+	}
+
+	return(albumId);
+}
+
 
 long musicDB::addArtist()	//artist must be set before calling function
 {
@@ -439,14 +473,14 @@ long musicDB::addSongToPreSongLibrary()
 	{
 
 		sprintf(SQLStmt, "INSERT into Music.presonglibrary (Name ,Artist, AlbumArtists ,Album, Composer, Grouping, SongYear, Location, TrackNumber, Genre, BitRate, SampleRate, SongTime, DateModified, DateAdded, AlbumId, ArtistId) values ('%s','%s','%s', '%s','%s', '%s' ,%d,'%s',%d, '%s' , %d, %d, %d, ?, ?,  %d, %d)", tname, tartist, talbumArtists, talbum, tcomposer, tgrouping, songYear, tlocation, trackNumber, tgenre, bitRate, sampleRate, songTime, albumId, artistId);
-//		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
+		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
 	}
 	else
 	{
 		sprintf(SQLStmt, "INSERT into Music.presonglibrary (Name ,Artist, AlbumArtists ,Album, Composer, Grouping, SongYear, Location, TrackNumber, Genre, BitRate, SampleRate, SongTime, DateModified, DateAdded, AlbumId, ArtistId, DiscNumber, DiscCount) values ('%s','%s','%s', '%s','%s', '%s' ,%d,'%s',%d, '%s' , %d, %d, %d, ?, ?,  %d, %d, %d, %d)", tname, tartist, talbumArtists, talbum, tcomposer, tgrouping, songYear, tlocation, trackNumber, tgenre, bitRate, sampleRate, songTime, albumId, artistId, diskNumber, diskCount);
-//		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
+		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
 	}
-//	cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
+	cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
 //Get the current time for date added
 	MYSQL_TIME dAdded;
 	MYSQL_TIME dModified;
@@ -567,52 +601,232 @@ long musicDB::RemoveSongsFromPreSongLibrary()
 	return(1); //if successful, return a 1
 }
 
-
-
-MYSQL_RES * queryPlayQ()
+void musicDB::setSongName(char * myString)
 {
-	char queryStmt[5000];
-	string message;
-	MYSQL_RES *queryPlayQResult;
+	name.clear();
+	if(myString != 0)
+	{
+		name.append(myString);
+	}
+}
 
-	sprintf(queryStmt,"SELECT playq.id, playq.songID, Name, Artist, Location, playq.Status, Album, Genre, TrackNumber, SongYear  FROM songlibrary inner join playq on songlibrary.SongIndex = playq.songID where (playq.Status = 'In Queue') order by playq.Arrangement asc, playq.Status, playq.RequestType desc, playq.id asc");
+void musicDB::setComposer(char * myString)
+{
+	composer.clear();
+	if(myString != 0)
+	{
+		composer.append(myString);
+	}
+}
+
+void musicDB::setAlbumArtists(char * myString)
+{
+	albumArtists.clear();
+	if(myString != 0)
+	{
+		albumArtists.append(myString);
+	}
+}
+
+void musicDB::setArtist(char * myString)
+{
+	artist.clear();
+	if(myString != 0)
+	{
+		artist.append(myString);
+	}
+}
+
+
+void musicDB::setAlbum(char * myString)
+{
+	album.clear();
+	if(myString != 0)
+	{
+		album.append(myString);
+	}
+}
+
+void musicDB::setGenre(char * myString)
+{
+	genre.clear();
+	if(myString != 0)
+	{
+		genre.append(myString);
+	}
+}
+
+void musicDB::setComments(char * myString)
+{
+	comments.clear();
+	if(myString != 0)
+	{
+		comments.append(myString);
+	}
+}
+
+
+void musicDB::setSongID(char * myString)
+{
+	songID = 0;
+
+	if(myString != 0)
+	{
+		songID = atol(myString);
+	}
+}
+
+void musicDB::setTrackNumber(char * myString)
+{
+	trackNumber = 0;
+
+	if(myString != 0)
+	{
+		trackNumber = atol(myString);
+	}
+}
+
+void musicDB::setDiskNumber(char * myString)
+{
+	diskNumber = 0;
+
+	if(myString != 0)
+	{
+		diskNumber = atol(myString);
+	}
+}
+
+void musicDB::setBitRate(char * myString)
+{
+	bitRate = 0;
+
+	if(myString != 0)
+	{
+		bitRate = atol(myString);
+	}
+}
+
+
+void musicDB::setSampleRate(char * myString)
+{
+	sampleRate = 0;
+
+	if(myString != 0)
+	{
+		sampleRate = atol(myString);
+	}
+}
+
+
+void musicDB::setSongTime(char * myString)
+{
+	songTime = 0;
+
+	if(myString != 0)
+	{
+		songTime = atol(myString);
+	}
+}
+
+
+
+void musicDB::setSongYear(char * myString)
+{
+	songYear = 0;
+
+	if(myString != 0)
+	{
+		songYear = atol(myString);
+	}
+}
+
+
+void musicDB::setArtistId(char * myString)
+{
+	artistId = 0;
+
+	if(myString != 0)
+	{
+		artistId = atol(myString);
+	}
+}
+
+void musicDB::setAlbumId(char * myString)
+{
+	albumId = 0;
+
+	if(myString != 0)
+	{
+		albumId = atol(myString);
+	}
+}
+
+MYSQL_RES * musicDB::queryAlbumSongs()
+{
+	const char * queryStmt = "SELECT SongIndex, Name,Composer, AlbumArtists, Artist, Location, Album, Genre, TrackNumber, DiscNumber, Comments, BitRate, SampleRate, SongTime, SongYear, ArtistID, AlbumID  FROM  Music.songlibrary where Grouping = 'Album';";
+//	const char * queryStmt = "SELECT SongIndex, Name,Composer, AlbumArtists, Artist, Location, Album, Genre, TrackNumber, DiscNumber, Comments, BitRate, SampleRate, SongTime, SongYear, ArtistID, AlbumID  FROM  Music.songlibrary where (Grouping = 'Album') and (Comments <> 'No Errors:');";
+
+	string message;
+
+
 	if(mysql_real_query(&dbaseConnection,queryStmt,strlen(queryStmt)))
 	{
 		message = "MusicDB.cpp ";
 		message.append(__func__);
 		message.append(": SQL error");
+//		myLog << "MusicDB.cpp " << __func__ <<": SQL error" << logError
+
 		myLog.print(logError, message);
 		return(0);
-//		exit(1);
+
 	}
-	queryPlayQResult = mysql_store_result(&dbaseConnection);
-	return(queryPlayQResult);
+	queryResult = mysql_store_result(&dbaseConnection);
+
+	return(queryResult);
 }
 
-struct playQRecord getNextPlayQRecord()
+int  musicDB::getNextSongRecord()
 {
 	int	i;
 	MYSQL_ROW row;
-	struct playQRecord pQR;
-	MYSQL_RES *queryPlayQResult;
 
-	queryPlayQResult = queryPlayQ();
-	row = mysql_fetch_row(queryPlayQResult);
-	pQR.id = atol(row[0]);
-	pQR.songID = atol(row[1]);
-	strcpy(pQR.name,row[2]);
-	strcpy(pQR.artist,row[3]);
-	strcpy(pQR.location,row[4]);
-	strcpy(pQR.status,row[5]);
-	strcpy(pQR.album,row[6]);
-	strcpy(pQR.genre,row[7]);
-	pQR.tracknumber =  atoi(row[8]);
-	pQR.songyear = atoi(row[9]);
-	mysql_free_result(queryPlayQResult);
-	return (pQR);
+	row = mysql_fetch_row(queryResult);
+
+	if (row == NULL) // if a null is returned, assume that we are at the end of the result set
+	{
+		return (0);
+	}
+
+
+	setSongID(row[0]);
+	setSongName(row[1]);
+	setComposer(row[2]);
+	setAlbumArtists(row[3]);
+	setArtist(row[4]);
+	setLocation(row[5]);
+	cout << "musicDB::getNextSongRecord Location: " << row[5] << endl;
+	setAlbum(row[6]);
+	setGenre(row[7]);
+
+	setTrackNumber(row[8]);
+	setDiskNumber(row[9]);
+	setComments(row[10]);
+	setBitRate(row[11]);
+	setSampleRate(row[12]);
+	setSongTime(row[13]);
+	setSongYear(row[14]);
+	setArtistId(row[15]);
+	setAlbumId(row[16]);
+
+	return (1);
 }
 
 
+int  musicDB::mysqlFree()
+{
+	mysql_free_result(queryResult);
+}
+#ifdef JON
 struct playQRecord getCurrentSongInPlayQ()
 {
 //	char * SQLStmt = "Select id from playq where Status = 'Currently Playing'";
@@ -669,3 +883,5 @@ struct playQRecord getCurrentSongInPlayQ()
 	mysql_free_result(queryResult);
 	return (pQR);
 }
+
+#endif

@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : addMusic.cpp
+// Name        : fixMusicMP3.cpp
 // Author      : Jon Dellaria
 // Version     :
 // Copyright   : Your copyright notice
@@ -36,7 +36,7 @@ int gotCoverJPG = 0;
 string destinationDir;
 string jpgThumbName = "none";
 string coverName = "none";
-long myAlbumYear = 0;
+long myAlbumYear = 0;//Add Music to Library
 configurationFile myConfig;
 
 typedef enum duplicateActions {
@@ -124,8 +124,232 @@ char* getCmdOption(char ** begin, char ** end, const std::string & option)
     }
     return 0;
 }
-
 int main(int argc, char *argv[])
+{
+	int x = 0;
+	cout << "hello world" << endl;
+	string message;
+	audioTags myTags;
+	Directory myDirectory;
+	File myFile;
+	string fileName;
+	string destinationFileName = "none";
+	size_t found;
+	string sourceFile;
+	string tempString = "/RAID/Music/Album Music/Edith Piaf/The Best Of/Edith Piaf - Hymne À L'Amour.mp3" ;
+
+//	myDB.queryAlbumSongs();
+//	myDB.getNextSongRecord();
+//	myTags.get((char*)myDB.location);
+//	checkForTagErrors(&myTags,(char*)myDB.location );
+//	if (myFile.exist(myDB.location) == 1)
+//	sourceFile = myDB.location;
+//	std::cout  << endl << "Length of myDB.location: " << sourceFile.length() << endl;
+//	std::cout  << endl << "Length of tempString: " << tempString.length() << endl;
+
+		int length = sourceFile.length();
+	//	for(int i = 0;i < where.length();i++)
+		int i = 0;
+
+		for(i = 0;i < length;i++)
+		{
+			std::cout  <<  "tempString: " <<  (unsigned int ) tempString[i]   <<  " myDB.location: "   <<  (unsigned int) myDB.location[i] << endl;
+
+		}
+
+
+
+		if (myFile.exist(tempString) == 1)
+		{
+			std::cout  << endl << "tempString: File Exists: "  << endl;
+		}
+		else
+		{
+			std::cout  << endl << "tempString: File DOES NOT Exists: "  << endl;
+		}
+
+		if (myFile.exist(sourceFile) == 1)
+		{
+			std::cout  << endl << "sourceFile: File Exists: "  << endl;
+		}
+		else
+		{
+			std::cout  << endl << "sourceFile: File DOES NOT Exists: "  << endl;
+		}
+	std::cout  << endl << "Comments: "  << endl;
+	std::cout << "SongIndex: " << myDB.songID << " - Comments: " << myTags.comments << endl;
+
+
+	std::cout  << endl << "Database: "  << endl;
+	std::cout << "Album: " << myDB.album << " - Song: " << myDB.name << " - Track: " << myDB.trackNumber << " - Location: " << myDB.location  << endl;
+	std::cout  << endl << "MP3File: "  << endl;
+	std::cout << "Album: " << myTags.album.ascii << " - Song: " << myTags.title.ascii << " - Track: " << myTags.track << " - Location: "  << myTags.location.ascii << endl;
+#ifdef JON
+
+
+
+	destinationDir = "/RAID/Music/Album Music/";
+
+
+
+	myDirectory.Recurse("/RAID/Music/Album Music/Edith Piaf/The Best Of/", doLoadAlbumsToDatabase);
+
+	myTags.get((char*)tempString.c_str());
+	myDB.setAlbum(myTags.album.ascii);
+	myDB.setArtist(myTags.artist.ascii);
+	myDB.setComposer(myTags.composers.ascii);
+	myDB.setAlbumArtists(myTags.albumArtists.ascii);
+	myDB.setSongName(myTags.title.ascii);
+	myDB.setGenre(myTags.genre.ascii);
+	myDB.setTrackNumber(myTags.track);
+	myDB.setSongYear(myTags.year);
+	myDB.setBitRate(myTags.bitrate);
+	myDB.setSampleRate(myTags.sampleRate);
+	myDB.setSongTime(myTags.length);
+	myDB.setDiskNumber(myTags.disk);
+	myDB.setDiskCount(myTags.diskcount);
+//				cout << "myDB.diskCount: " << myDB.diskCount  << endl;
+//				cout << "myDB.diskNumber: " << myDB.diskNumber  << endl;
+	myDB.setLocation ((char*)tempString.c_str());
+	myDB.setGrouping("Album");
+
+	myDB.addSongToPreSongLibrary();
+
+	myDB.CommitSongsToLibrary();
+
+#endif
+
+
+//#ifdef JON
+//	myDB.comments = myTags.comments;
+//	myDB.updateSongComments();
+
+	cout << " looking into DB" << endl;
+x = 0;
+	myDB.queryAlbumSongs();
+	while (myDB.getNextSongRecord() == 1)
+	{
+		x++;
+		if (myTags.get((char*)myDB.location) == 1)
+		{
+			checkForTagErrors(&myTags,(char*)myDB.location );
+			myDB.comments = myTags.comments;
+			myDB.updateSongComments();
+			myTags.set((char*)myDB.location);
+			std::cout << "Album: " << myDB.album << " - Song: " << myDB.name << " - Track: " << myDB.trackNumber << " - Location: " << myDB.location  <<endl;
+		}
+		else
+		{
+			myDB.comments = "No File Found";
+			myDB.updateSongComments();
+		}
+	}
+//#endif
+	myDB.mysqlFree();
+	cout << x << " Records Found" << endl;
+
+}
+
+
+int checkForTagErrors(audioTags *mp3Tags, string mp3File)
+{
+	string message;
+	string commentMessage;
+	int returnValue = 0;
+	vector <string> myTokens;
+	int myInt;
+	size_t found;
+	string fileName;
+	string tempString;
+	string AlbumName;
+	string ArtistName;
+	int errors = 0;
+
+
+
+	found = mp3File.find_last_of("/\\");
+	fileName = mp3File.substr(found+1);
+	tempString = mp3File.substr(0,found);
+
+	found = tempString.find_last_of("/\\");
+	AlbumName = tempString.substr(found+1);
+	tempString = tempString.substr(0,found);
+
+	found = tempString.find_last_of("/\\");
+	ArtistName = tempString.substr(found+1);
+	tempString = tempString.substr(0,found);
+
+	message = "checkForTagErrors: fileName: ";
+	message.append(fileName);
+	message.append(" AlbumName: ");
+	message.append(AlbumName);
+	message.append(" ArtistName: ");
+	message.append(ArtistName);
+	myLog.print(logDebug, message);
+
+	if (mp3Tags->track == 0)
+	{
+		commentMessage.append("No Track: ");
+		mp3Tags->track = myDB.trackNumber;
+		returnValue = 1;
+		message = "No Track Information ";
+		message.append(mp3File);
+		myLog.print(logError, message);
+	}
+	if (mp3Tags->year == 0)
+	{
+		mp3Tags->year = myDB.songYear;
+		returnValue = 1;
+		commentMessage.append("No Year: ");
+		message = "No Year Information ";
+		message.append(mp3File);
+		myLog.print(logError, message);
+	}
+	if (mp3Tags->title.utf8.length() == 0)
+	{
+		mp3Tags->title.ascii = myDB.name;
+		returnValue = 1;
+		commentMessage.append("No Title: ");
+		message = "No Title Information ";
+		message.append(mp3File);
+		myLog.print(logError, message);
+	}
+	if (mp3Tags->album.utf8.length() == 0)
+	{
+		mp3Tags->album.ascii = myDB.album;
+		returnValue = 1;
+		commentMessage.append("No Album: ");
+		message = "No Album Information. Setting Album name to its Folder Name: ";
+		message.append("'");
+		message.append(AlbumName);
+		message.append("' ");
+		message.append(mp3File);
+		myLog.print(logError, message);
+	}
+	if (mp3Tags->artist.utf8.length() == 0)
+	{
+		mp3Tags->artist.ascii = myDB.artist;
+		returnValue = 1;
+		commentMessage.append("No Artist: ");
+
+		message = "No Artist Information. Setting Artist name to its Folder Name: ";
+		message.append("'");
+		message.append(ArtistName);
+		message.append("' ");
+		message.append(mp3File);
+		myLog.print(logError, message);
+	}
+	if (returnValue == 0)
+	{
+		commentMessage = "No Errors:";
+	}
+
+
+	mp3Tags->comments = commentMessage;
+	return(returnValue);
+}
+
+int main1(int argc, char *argv[])
 {
 	Directory myDirectory;
 	audioTags myTags;
@@ -717,98 +941,6 @@ void doCreatFileNameFolderStructure(char const * directoyEntry, int directoyEntr
 	}
 }
 
-int checkForTagErrors(audioTags *mp3Tags, string mp3File)
-{
-	string message;
-	int returnValue = 0;
-	vector <string> myTokens;
-	int myInt;
-	size_t found;
-	string fileName;
-	string tempString;
-	string AlbumName;
-	string ArtistName;
-
-	found = mp3File.find_last_of("/\\");
-	fileName = mp3File.substr(found+1);
-	tempString = mp3File.substr(0,found);
-
-	found = tempString.find_last_of("/\\");
-	AlbumName = tempString.substr(found+1);
-	tempString = tempString.substr(0,found);
-
-	found = tempString.find_last_of("/\\");
-	ArtistName = tempString.substr(found+1);
-	tempString = tempString.substr(0,found);
-
-	message = "checkForTagErrors: fileName: ";
-	message.append(fileName);
-	message.append(" AlbumName: ");
-	message.append(AlbumName);
-	message.append(" ArtistName: ");
-	message.append(ArtistName);
-	myLog.print(logDebug, message);
-
-	if (mp3Tags->track == 0)
-	{
-
-		myTokens = TokenizeString(fileName, ' ');
-		myInt = StringToInt(myTokens[0]);
-		if (myInt == -1) // er have an error
-		{
-			returnValue = 1;
-			message = "No Track Information ";
-			message.append(mp3File);
-			myLog.print(logError, message);
-		}
-		else // other wise, this is the track number
-		{
-			mp3Tags->track = myInt;
-			mp3Tags->set(mp3File.c_str());
-		}
-
-	}
-	if (mp3Tags->year == 0)
-	{
-//		returnValue = 1; // just report error for year not found
-		message = "No Year Information ";
-		message.append(mp3File);
-		myLog.print(logError, message);
-	}
-	if (mp3Tags->title.utf8.length() == 0)
-	{
-		returnValue = 1;
-		message = "No Title Information ";
-		message.append(mp3File);
-		myLog.print(logError, message);
-	}
-	if (mp3Tags->album.utf8.length() == 0)
-	{
-		mp3Tags->album.utf8 = AlbumName; // Set album name to folder name
-		mp3Tags->set(mp3File.c_str());
-//		returnValue = 1;
-		message = "No Album Information. Setting Album name to its Folder Name: ";
-		message.append("'");
-		message.append(AlbumName);
-		message.append("' ");
-		message.append(mp3File);
-		myLog.print(logWarning, message);
-	}
-	if (mp3Tags->artist.utf8.length() == 0)
-	{
-		mp3Tags->artist.utf8 = ArtistName; // Set Artist name to folder name
-		mp3Tags->set(mp3File.c_str());
-//		returnValue = 1;
-		message = "No Artist Information. Setting Artist name to its Folder Name: ";
-		message.append("'");
-		message.append(ArtistName);
-		message.append("' ");
-		message.append(mp3File);
-		myLog.print(logWarning, message);
-	}
-	return(returnValue);
-}
-
 
 void doLoadAlbumsToDatabase(char const * directoyEntry, int directoyEntryType)
 {
@@ -900,12 +1032,12 @@ void doLoadAlbumsToDatabase(char const * directoyEntry, int directoyEntryType)
 			if (isMP3((char* const)sourceFile.c_str()))
 			{
 				myTags.get((char*)sourceFile.c_str());
-				myDB.setAlbum(myTags.album.ascii);
-				myDB.setArtist(myTags.artist.ascii);
-				myDB.setComposer(myTags.composers.ascii);
-				myDB.setAlbumArtists(myTags.albumArtists.ascii);
-				myDB.setSongName(myTags.title.ascii);
-				myDB.setGenre(myTags.genre.ascii);
+				myDB.setAlbum(myTags.album.utf8);
+				myDB.setArtist(myTags.artist.utf8);
+				myDB.setComposer(myTags.composers.utf8);
+				myDB.setAlbumArtists(myTags.albumArtists.utf8);
+				myDB.setSongName(myTags.title.utf8);
+				myDB.setGenre(myTags.genre.utf8);
 				myDB.setTrackNumber(myTags.track);
 				myDB.setSongYear(myTags.year);
 				myDB.setBitRate(myTags.bitrate);
