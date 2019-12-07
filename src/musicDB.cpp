@@ -763,8 +763,8 @@ void musicDB::setAlbumId(char * myString)
 
 MYSQL_RES * musicDB::queryAlbumSongs()
 {
-	const char * queryStmt = "SELECT SongIndex, Name,Composer, AlbumArtists, Artist, Location, Album, Genre, TrackNumber, DiscNumber, Comments, BitRate, SampleRate, SongTime, SongYear, ArtistID, AlbumID  FROM  Music.songlibrary where Grouping = 'Album';";
-//	const char * queryStmt = "SELECT SongIndex, Name,Composer, AlbumArtists, Artist, Location, Album, Genre, TrackNumber, DiscNumber, Comments, BitRate, SampleRate, SongTime, SongYear, ArtistID, AlbumID  FROM  Music.songlibrary where (Grouping = 'Album') and (Comments <> 'No Errors:');";
+//	const char * queryStmt = "SELECT SongIndex, Name,Composer, AlbumArtists, Artist, Location, Album, Genre, TrackNumber, DiscNumber, Comments, BitRate, SampleRate, SongTime, SongYear, ArtistID, AlbumID  FROM  Music.songlibrary where Grouping = 'Album';";
+	const char * queryStmt = "SELECT SongIndex, Name,Composer, AlbumArtists, Artist, Location, Album, Genre, TrackNumber, DiscNumber, Comments, BitRate, SampleRate, SongTime, SongYear, ArtistID, AlbumID  FROM  Music.songlibrary where (Grouping = 'Album') and (Comments <> 'No Errors:');";
 
 	string message;
 

@@ -39,3 +39,4 @@
 #Folders
 Debug/
 *.log*
+/Release/

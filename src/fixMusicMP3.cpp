@@ -135,12 +135,13 @@ int main(int argc, char *argv[])
 	string fileName;
 	string destinationFileName = "none";
 	size_t found;
-	string sourceFile;
-	string tempString = "/RAID/Music/Album Music/Edith Piaf/The Best Of/Edith Piaf - Hymne À L'Amour.mp3" ;
+	string sourceFile = "/home/jdellaria/Desktop/Mötley Crüe/Decade of Decadence/08 Wild Side.mp3" ;
+	string tempString = "/home/jdellaria/Desktop/Mötley Crüe/Decade of Decadence/08 Wild Side.mp3" ;
 
 //	myDB.queryAlbumSongs();
 //	myDB.getNextSongRecord();
 //	myTags.get((char*)myDB.location);
+	myTags.get((char*)sourceFile.c_str());
 //	checkForTagErrors(&myTags,(char*)myDB.location );
 //	if (myFile.exist(myDB.location) == 1)
 //	sourceFile = myDB.location;
@@ -151,49 +152,75 @@ int main(int argc, char *argv[])
 	//	for(int i = 0;i < where.length();i++)
 		int i = 0;
 
-		for(i = 0;i < length;i++)
-		{
-			std::cout  <<  "tempString: " <<  (unsigned int ) tempString[i]   <<  " myDB.location: "   <<  (unsigned int) myDB.location[i] << endl;
+		string AlbumName;
+		string ArtistName;
+		string mp3File = sourceFile ;
 
-		}
+		found = mp3File.find_last_of("/\\");
+		fileName = mp3File.substr(found+1);
+		tempString = mp3File.substr(0,found);
 
+		found = tempString.find_last_of("/\\");
+		AlbumName = tempString.substr(found+1);
+		tempString = tempString.substr(0,found);
 
+		found = tempString.find_last_of("/\\");
+		ArtistName = tempString.substr(found+1);
+		tempString = tempString.substr(0,found);
 
-		if (myFile.exist(tempString) == 1)
-		{
-			std::cout  << endl << "tempString: File Exists: "  << endl;
-		}
-		else
-		{
-			std::cout  << endl << "tempString: File DOES NOT Exists: "  << endl;
-		}
-
-		if (myFile.exist(sourceFile) == 1)
-		{
-			std::cout  << endl << "sourceFile: File Exists: "  << endl;
-		}
-		else
-		{
-			std::cout  << endl << "sourceFile: File DOES NOT Exists: "  << endl;
-		}
-	std::cout  << endl << "Comments: "  << endl;
-	std::cout << "SongIndex: " << myDB.songID << " - Comments: " << myTags.comments << endl;
+		message = " fileName: ";
+		message.append(fileName);
+		message.append(" AlbumName: ");
+		message.append(AlbumName);
+		message.append(" ArtistName: ");
+		message.append(ArtistName);
+		std::cout  << endl << message  << endl;
 
 
-	std::cout  << endl << "Database: "  << endl;
-	std::cout << "Album: " << myDB.album << " - Song: " << myDB.name << " - Track: " << myDB.trackNumber << " - Location: " << myDB.location  << endl;
-	std::cout  << endl << "MP3File: "  << endl;
-	std::cout << "Album: " << myTags.album.ascii << " - Song: " << myTags.title.ascii << " - Track: " << myTags.track << " - Location: "  << myTags.location.ascii << endl;
+	std::cout  << endl << "UTF8 MP3File: "  << endl;
+	std::cout << "Artist: " << myTags.artist.utf8 << " - Album: " << myTags.album.utf8 << " - Song: " << myTags.title.utf8 << " - Track: " << myTags.track << " - Location: "  << myTags.location.utf8 << endl;
+	std::cout  << endl << "Ascii MP3File: "  << endl;
+	std::cout << "Artist: " << myTags.artist.ascii << " - Album: " << myTags.album.ascii << " - Song: " << myTags.title.ascii << " - Track: " << myTags.track << " - Location: "  << myTags.location.ascii << endl;
+
+
+	std::cout  << endl << "Setting new names: "  << endl;
+	myTags.album.utf8 = AlbumName;
+	myTags.artist.utf8 = ArtistName;
+	myTags.set((char*)sourceFile.c_str());
+	myTags.get((char*)sourceFile.c_str());
+	std::cout  << endl << "UTF8 MP3File: "  << endl;
+	std::cout << "Artist: - "  << myTags.artist.utf8 << " - Album: " << myTags.album.utf8 << " - Song: " << myTags.title.utf8 << " - Track: " << myTags.track << " - Location: "  << myTags.location.utf8 << endl;
+	std::cout  << endl << "Ascii MP3File: "  << endl;
+	std::cout << "Artist: - " << myTags.artist.ascii << " - Album: " << myTags.album.ascii << " - Song: " << myTags.title.ascii << " - Track: " << myTags.track << " - Location: "  << myTags.location.ascii << endl;
+
+
+
 #ifdef JON
-
-
-
 	destinationDir = "/RAID/Music/Album Music/";
 
 
 
-	myDirectory.Recurse("/RAID/Music/Album Music/Edith Piaf/The Best Of/", doLoadAlbumsToDatabase);
+	myDirectory.Recurse("/RAID/Music/Album Music/", doLoadAlbumsToDatabase);
 
+	myDB.CommitSongsToLibrary();
+
+	if(myLog.numberOfErrors == 0)
+	{
+
+
+		myDB.RemoveSongsFromPreSongLibrary();
+		message = "ACTION_LOAD: No Errors. ";
+		myLog.print(logInformation, message);
+
+	}else
+	{
+		message = "ACTION_LOAD: There were Errors. ";
+		myLog.print(logInformation, message);
+	}
+
+#endif
+
+#ifdef JON
 	myTags.get((char*)tempString.c_str());
 	myDB.setAlbum(myTags.album.ascii);
 	myDB.setArtist(myTags.artist.ascii);
@@ -220,12 +247,19 @@ int main(int argc, char *argv[])
 #endif
 
 
-//#ifdef JON
-//	myDB.comments = myTags.comments;
-//	myDB.updateSongComments();
+
+//	fixMP3ToDBorFolder( )
+
+}
+
+int fixMP3ToDBorFolder( ) // this checks to see if the MP3 file has all its tags. If it does not, it sets the missing tags to the Database. If the Database entry is missing as well.. it captures the information from the folder structure and sets the MP3 file to that data
+{
+	string message;
+	audioTags myTags;
+	int x;
 
 	cout << " looking into DB" << endl;
-x = 0;
+	x = 0;
 	myDB.queryAlbumSongs();
 	while (myDB.getNextSongRecord() == 1)
 	{
@@ -244,10 +278,9 @@ x = 0;
 			myDB.updateSongComments();
 		}
 	}
-//#endif
+//	cout << x << " Records Found" << endl;
+	myLog << x << " Records Found" << DLogInformation;
 	myDB.mysqlFree();
-	cout << x << " Records Found" << endl;
-
 }
 
 
@@ -307,7 +340,7 @@ int checkForTagErrors(audioTags *mp3Tags, string mp3File)
 	}
 	if (mp3Tags->title.utf8.length() == 0)
 	{
-		mp3Tags->title.ascii = myDB.name;
+		mp3Tags->title.utf8 = myDB.name;
 		returnValue = 1;
 		commentMessage.append("No Title: ");
 		message = "No Title Information ";
@@ -316,7 +349,11 @@ int checkForTagErrors(audioTags *mp3Tags, string mp3File)
 	}
 	if (mp3Tags->album.utf8.length() == 0)
 	{
-		mp3Tags->album.ascii = myDB.album;
+		mp3Tags->album.utf8 = myDB.album;
+		if (myDB.album.length() == 0)
+		{
+			mp3Tags->album.utf8 = AlbumName;
+		}
 		returnValue = 1;
 		commentMessage.append("No Album: ");
 		message = "No Album Information. Setting Album name to its Folder Name: ";
@@ -328,7 +365,11 @@ int checkForTagErrors(audioTags *mp3Tags, string mp3File)
 	}
 	if (mp3Tags->artist.utf8.length() == 0)
 	{
-		mp3Tags->artist.ascii = myDB.artist;
+		mp3Tags->artist.utf8 = myDB.artist;
+		if (myDB.artist.length() == 0)
+		{
+			mp3Tags->artist.utf8 = ArtistName;
+		}
 		returnValue = 1;
 		commentMessage.append("No Artist: ");
 
