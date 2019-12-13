@@ -56,6 +56,7 @@ public:
 	long	addAlbum();
 	long	updateAlbumCover();
 	long    updateSongComments();
+	long 	updateAlbumCoverREF();
 	long	addSongToPreSongLibrary();
 	long	addSongWithTimes( char * SQLStmt, MYSQL_TIME* dateModified, MYSQL_TIME* dateAdded);
 	long	CommitSongsToLibrary();
@@ -111,7 +112,9 @@ public:
 	void    setAlbumId(char * myString);
 
 	MYSQL_RES * queryAlbumSongs();
+	MYSQL_RES * queryAlbumCovers();
 	int  getNextSongRecord();
+	int  getNextAlbumCoverRecord();
 	int  mysqlFree();
 
 };

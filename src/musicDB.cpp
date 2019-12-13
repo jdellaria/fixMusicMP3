@@ -171,13 +171,9 @@ void musicDB::setLocation(char* where)
 	int i = 0;
 	std::vector< unsigned char > g;
 
-	for(i = 0;i < length;i++)
-	{
-
-		location[i] = where[i];
-
-	}
-	location[i] = 0;
+	if (length > 254)
+		where[254] = 0;
+	sprintf(location, "%s", where);
 
 #ifdef JON
 //This next section checks to see if we are give a UTF8 character (today we only handle C3). If it is, we then remove the C3 character and adjust the following character to the Windows 1252 character set.
@@ -207,7 +203,11 @@ void musicDB::setThumbLocation(char* where)
 	int j = 0;
 	int i = 0;
 	std::vector< unsigned char > g;
+	if (length > 254)
+		where[254] = 0;
+	sprintf(thumblocation, "%s", where);
 
+#ifdef JON
 //This next section checks to see if we are give a UTF8 character (today we only handle C3). If it is, we then remove the C3 character and adjust the following character to the Windows 1252 character set.
 	for (i=0; where[i]; i++) g.push_back(where[i]);
 	for(i = 0;i < length;i++)
@@ -225,7 +225,7 @@ void musicDB::setThumbLocation(char* where)
 		j++;
 	}
 	thumblocation[j] = 0;
-
+#endif
 }
 
 
@@ -255,6 +255,13 @@ MYSQL musicDB::OpenConnection()
 		printf("Failed to connect to database: Error: %s\n", mysql_error(&dbaseConnection));
 		return(dbaseConnection);
 	}
+
+	if (!mysql_set_character_set(&dbaseConnection, "utf8"))
+	{
+
+		printf("New client character set: %s\n",
+		mysql_character_set_name(&dbaseConnection));
+	}
 	return (dbaseConnection);
 }
 
@@ -273,11 +280,18 @@ long musicDB::addAlbum()	//album must be set before calling function
 	MYSQL_RES *queryResult;
 	MYSQL_ROW row;
 	int nrows;
-
+	int length;
 //	strcpy (tempAlbum,album);
 //	normalizeString(tempAlbum, 149);
-	mysql_real_escape_string(&dbaseConnection, tempAlbum, album.c_str(), album.length());
-	mysql_real_escape_string(&dbaseConnection, tempArtist, artist.c_str(), artist.length());
+	length = album.length();
+	if (length > 254)
+		length = 254;
+
+	mysql_real_escape_string(&dbaseConnection, tempAlbum, album.c_str(), length);
+	length = artist.length();
+	if (length > 254)
+		length = 254;
+	mysql_real_escape_string(&dbaseConnection, tempArtist, artist.c_str(), length);
 
 	sprintf(SQLStmt, "INSERT into Music.Albums (Album, refId, ArtistName, SongYear) values (TRIM('%s'),9998877,TRIM('%s'),%d);", tempAlbum, tempArtist, songYear); // this adds a new album with a unique ID (9998877) so that we can retrieve the albumID next
 	if (mysql_query(&dbaseConnection, SQLStmt))
@@ -331,6 +345,25 @@ long musicDB::updateAlbumCover()	//album must be set before calling function
 	return(albumId);
 }
 
+
+long musicDB::updateAlbumCoverREF()	//Song Comments must be set before calling function
+{
+	char SQLStmt[1000];
+	char templocation[256];
+	int length;
+
+	sprintf(SQLStmt, "Update Music.Albums set refId = %d where AlbumId = %d;" ,sampleRate ,albumId);
+	if (mysql_query(&dbaseConnection, SQLStmt))
+	{
+		fprintf(stderr, " updateAlbumCover updating Cover\n");
+		fprintf(stderr, " %s: %s\n", location, mysql_error(&dbaseConnection));
+		return(0);
+	}
+
+	return(albumId);
+}
+
+
 long musicDB::updateSongComments()	//Song Comments must be set before calling function
 {
 	char SQLStmt[1000];
@@ -359,14 +392,14 @@ long musicDB::updateSongComments()	//Song Comments must be set before calling fu
 long musicDB::addArtist()	//artist must be set before calling function
 {
 	char SQLStmt[1000];
-	char tempArtist[256];
+	char tempArtist[150];
 	int length;
 
 //	strcpy (tempArtist,artist);
 //	normalizeString(tempArtist, 149);
 	length = artist.length();
-	if (length > 254)
-		length = 254;
+	if (length > 149)
+		length = 149;
 	mysql_real_escape_string(&dbaseConnection, tempArtist, artist.c_str(), length);
 	artistId = getArtistID();
 	if (artistId > 0)
@@ -473,14 +506,14 @@ long musicDB::addSongToPreSongLibrary()
 	{
 
 		sprintf(SQLStmt, "INSERT into Music.presonglibrary (Name ,Artist, AlbumArtists ,Album, Composer, Grouping, SongYear, Location, TrackNumber, Genre, BitRate, SampleRate, SongTime, DateModified, DateAdded, AlbumId, ArtistId) values ('%s','%s','%s', '%s','%s', '%s' ,%d,'%s',%d, '%s' , %d, %d, %d, ?, ?,  %d, %d)", tname, tartist, talbumArtists, talbum, tcomposer, tgrouping, songYear, tlocation, trackNumber, tgenre, bitRate, sampleRate, songTime, albumId, artistId);
-		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
+//		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
 	}
 	else
 	{
 		sprintf(SQLStmt, "INSERT into Music.presonglibrary (Name ,Artist, AlbumArtists ,Album, Composer, Grouping, SongYear, Location, TrackNumber, Genre, BitRate, SampleRate, SongTime, DateModified, DateAdded, AlbumId, ArtistId, DiscNumber, DiscCount) values ('%s','%s','%s', '%s','%s', '%s' ,%d,'%s',%d, '%s' , %d, %d, %d, ?, ?,  %d, %d, %d, %d)", tname, tartist, talbumArtists, talbum, tcomposer, tgrouping, songYear, tlocation, trackNumber, tgenre, bitRate, sampleRate, songTime, albumId, artistId, diskNumber, diskCount);
-		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
+//		cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
 	}
-	cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
+//	cout << "musicDB: sprintf(SQLStmt: "  << SQLStmt << endl;
 //Get the current time for date added
 	MYSQL_TIME dAdded;
 	MYSQL_TIME dModified;
@@ -822,6 +855,52 @@ int  musicDB::getNextSongRecord()
 }
 
 
+MYSQL_RES * musicDB::queryAlbumCovers()
+{
+	const char * queryStmt = "SELECT Album, AlbumId, refId, Cover, ArtistName FROM Music.Albums where refId = 1;";
+//	const char * queryStmt = "SELECT Album, AlbumId, refId, Cover, ArtistName FROM Music.Albums where refId = 0;";
+	string message;
+
+
+	if(mysql_real_query(&dbaseConnection,queryStmt,strlen(queryStmt)))
+	{
+		message = "MusicDB.cpp ";
+		message.append(__func__);
+		message.append(": SQL error");
+//		myLog << "MusicDB.cpp " << __func__ <<": SQL error" << logError
+
+		myLog.print(logError, message);
+		return(0);
+
+	}
+	queryResult = mysql_store_result(&dbaseConnection);
+
+	return(queryResult);
+}
+
+int  musicDB::getNextAlbumCoverRecord()
+{
+	int	i;
+	MYSQL_ROW row;
+
+	row = mysql_fetch_row(queryResult);
+
+	if (row == NULL) // if a null is returned, assume that we are at the end of the result set
+	{
+		return (0);
+	}
+	setAlbum(row[0]);
+	setAlbumId(row[1]);
+	setSampleRate(row[2]);
+	setLocation(row[3]);
+	setArtist(row[4]);
+
+//	cout << "musicDB::getNextAlbumCoverRecord Location: " << row[3] << endl;
+
+	return (1);
+}
+
+
 int  musicDB::mysqlFree()
 {
 	mysql_free_result(queryResult);
@@ -874,6 +953,8 @@ struct playQRecord getCurrentSongInPlayQ()
 		pQR.tracknumber =  atoi(row[8]);
 		pQR.songyear = atoi(row[9]);
 
+		message.append(__func__);
+		message.append(": pQR.id = 0");
 		message = "MusicDB.cpp "; // Jon
 		message.append(__func__);
 		message.append(": song returned");

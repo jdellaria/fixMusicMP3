@@ -69,6 +69,8 @@ void doLoadAlbumsToDatabase(char const * directoyEntry, int directoyEntryType);
 void doCheckForTagErrors(char const * directoyEntry, int directoyEntryType);
 void removeForbiddenFileNameChar(string* s);
 int checkForTagErrors(audioTags *myTags, string sourceFile);
+int fixMP3ToDBorFolder( );
+int fixAlbumCovers( );
 
 #ifdef JON
 #include <string>
@@ -124,6 +126,7 @@ char* getCmdOption(char ** begin, char ** end, const std::string & option)
     }
     return 0;
 }
+
 int main(int argc, char *argv[])
 {
 	int x = 0;
@@ -137,7 +140,7 @@ int main(int argc, char *argv[])
 	size_t found;
 	string sourceFile = "/home/jdellaria/Desktop/Mötley Crüe/Decade of Decadence/08 Wild Side.mp3" ;
 	string tempString = "/home/jdellaria/Desktop/Mötley Crüe/Decade of Decadence/08 Wild Side.mp3" ;
-
+#ifdef JON
 //	myDB.queryAlbumSongs();
 //	myDB.getNextSongRecord();
 //	myTags.get((char*)myDB.location);
@@ -195,7 +198,7 @@ int main(int argc, char *argv[])
 
 
 
-#ifdef JON
+
 	destinationDir = "/RAID/Music/Album Music/";
 
 
@@ -246,17 +249,52 @@ int main(int argc, char *argv[])
 
 #endif
 
+	fixAlbumCovers( );
 
-
-//	fixMP3ToDBorFolder( )
+//	fixMP3ToDBorFolder( );
 
 }
+
+int fixAlbumCovers( ) // this checks to see if the MP3 file has all its tags. If it does not, it sets the missing tags to the Database. If the Database entry is missing as well.. it captures the information from the folder structure and sets the MP3 file to that data
+{
+	string message;
+	audioTags myTags;
+	int x, checkValue;
+	File myFile;
+
+	cout << " looking into DB" << endl;
+	x = 0;
+	myDB.queryAlbumCovers();
+	while (myDB.getNextAlbumCoverRecord() == 1)
+	{
+
+		if (myFile.exist(myDB.location) == 1)
+		{
+			myDB.sampleRate = 0;
+			myDB.updateAlbumCoverREF();
+		}
+		else
+		{
+			std::cout << "Album: " << myDB.album <<  "Artist: " << myDB.artist << " - sampleRate: " << myDB.sampleRate << " - Location: " << myDB.location  << endl;
+			myDB.sampleRate = 1;
+			myDB.updateAlbumCoverREF();
+			x++;
+		}
+
+//			myDB.sampleRate = ;
+
+	}
+//	cout << x << " Records Found" << endl;
+	myLog << x << " Records NOT Found" << DLogInformation;
+	myDB.mysqlFree();
+}
+
 
 int fixMP3ToDBorFolder( ) // this checks to see if the MP3 file has all its tags. If it does not, it sets the missing tags to the Database. If the Database entry is missing as well.. it captures the information from the folder structure and sets the MP3 file to that data
 {
 	string message;
 	audioTags myTags;
-	int x;
+	int x, checkValue;
 
 	cout << " looking into DB" << endl;
 	x = 0;
@@ -266,10 +304,13 @@ int fixMP3ToDBorFolder( ) // this checks to see if the MP3 file has all its tags
 		x++;
 		if (myTags.get((char*)myDB.location) == 1)
 		{
-			checkForTagErrors(&myTags,(char*)myDB.location );
+			checkValue = checkForTagErrors(&myTags,(char*)myDB.location );
 			myDB.comments = myTags.comments;
 			myDB.updateSongComments();
-			myTags.set((char*)myDB.location);
+			if (checkValue == 1)
+			{
+				myTags.set((char*)myDB.location); // if there were errors, then commit changes.
+			}
 			std::cout << "Album: " << myDB.album << " - Song: " << myDB.name << " - Track: " << myDB.trackNumber << " - Location: " << myDB.location  <<endl;
 		}
 		else
